@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -208,7 +210,48 @@ func launchMessage(level *Level) string {
 	}
 }
 
+func overlayEnv(base []string, overlay []string) []string {
+	env := make(map[string]string)
+	for _, e := range base {
+		if idx := strings.Index(e, "="); idx != -1 {
+			env[e[:idx]] = e[idx+1:]
+		}
+	}
+	for _, e := range overlay {
+		if idx := strings.Index(e, "="); idx != -1 {
+			env[e[:idx]] = e[idx+1:]
+		}
+	}
+	result := make([]string, 0, len(env))
+	for k, v := range env {
+		result = append(result, k+"="+v)
+	}
+	return result
+}
+
 func execute(level *Level, passthrough []string) {
+	binary, err := exec.LookPath(level.Command)
+	if err != nil {
+		if level.Command == "claude" {
+			fmt.Fprintln(os.Stderr, "claude not found. Install: https://claude.ai/download")
+		} else {
+			fmt.Fprintln(os.Stderr, "codex not found. Install: npm i -g @openai/codex")
+		}
+		os.Exit(1)
+	}
+
 	fmt.Println(launchMessage(level))
-	fmt.Printf("Would execute: %s %v (passthrough: %v)\n", level.Command, level.Args, passthrough)
+
+	// Build argv: command name + level args + passthrough
+	argv := append([]string{level.Command}, level.Args...)
+	argv = append(argv, passthrough...)
+
+	// Build env: inherit current env, overlay level-specific vars (replacing duplicates)
+	env := overlayEnv(os.Environ(), level.Env)
+
+	// Replace this process
+	if err := syscall.Exec(binary, argv, env); err != nil {
+		fmt.Fprintln(os.Stderr, "exec failed:", err)
+		os.Exit(1)
+	}
 }
