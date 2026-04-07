@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type Level struct {
@@ -53,6 +57,87 @@ func init() {
 	flag.BoolVar(helpFlag, "help", false, "show help")
 }
 
+type model struct {
+	cursor   int
+	selected *Level
+	quitting bool
+}
+
+func initialModel() model {
+	return model{cursor: 3} // default to "Had a few beers"
+}
+
+func (m model) Init() tea.Cmd {
+	return nil
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "esc", "ctrl+c":
+			m.quitting = true
+			return m, tea.Quit
+		case "up", "k":
+			if m.cursor > 0 {
+				m.cursor--
+			}
+		case "down", "j":
+			if m.cursor < len(levels)-1 {
+				m.cursor++
+			}
+		case "enter":
+			m.selected = &levels[m.cursor]
+			return m, tea.Quit
+		}
+	}
+	return m, nil
+}
+
+var (
+	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("214"))
+	selectedStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("212"))
+	dimStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	helpStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+)
+
+func (m model) View() string {
+	if m.quitting || m.selected != nil {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString(titleStyle.Render("  🍺 Claude Sobriety Selector"))
+	b.WriteString("\n\n")
+
+	for i, level := range levels {
+		if level.IsSpecial && i > 0 {
+			b.WriteString("  " + dimStyle.Render("─────────────────────────────") + "\n")
+		}
+
+		cursor := "  ○ "
+		name := level.Name
+		desc := "      " + level.Description
+
+		if i == m.cursor {
+			cursor = "  ● "
+			name = selectedStyle.Render(name)
+			desc = "      " + selectedStyle.Render(level.Description)
+		} else {
+			desc = "      " + dimStyle.Render(level.Description)
+		}
+
+		b.WriteString(cursor + name + "\n")
+		b.WriteString(desc + "\n")
+	}
+
+	b.WriteString("\n")
+	b.WriteString(helpStyle.Render("  ↑/↓ select • enter confirm • q quit"))
+	b.WriteString("\n")
+
+	return b.String()
+}
+
 func main() {
 	flag.Parse()
 
@@ -79,7 +164,17 @@ func main() {
 		return
 	}
 
-	fmt.Println("TODO: show TUI")
+	p := tea.NewProgram(initialModel())
+	m, err := p.Run()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	finalModel := m.(model)
+	if finalModel.selected != nil {
+		execute(finalModel.selected, passthrough)
+	}
 }
 
 func printHelp() {
