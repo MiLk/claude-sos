@@ -1,7 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"os"
 	"strconv"
 )
 
@@ -41,6 +43,59 @@ func findLevel(s string) (*Level, error) {
 	return nil, fmt.Errorf("Unknown level: %s. Try: forgot, nijikai, nihonshu, beers, beer, sober, police", s)
 }
 
+var (
+	levelFlag = flag.String("l", "", "level by index (0-6) or keyword")
+	helpFlag  = flag.Bool("h", false, "show help")
+)
+
+func init() {
+	flag.StringVar(levelFlag, "level", "", "level by index (0-6) or keyword")
+	flag.BoolVar(helpFlag, "help", false, "show help")
+}
+
 func main() {
-	fmt.Println("csos")
+	flag.Parse()
+
+	if *helpFlag {
+		printHelp()
+		return
+	}
+
+	var passthrough []string
+	for i, arg := range os.Args[1:] {
+		if arg == "--" {
+			passthrough = os.Args[i+2:]
+			break
+		}
+	}
+
+	if *levelFlag != "" {
+		level, err := findLevel(*levelFlag)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		execute(level, passthrough)
+		return
+	}
+
+	fmt.Println("TODO: show TUI")
+}
+
+func printHelp() {
+	fmt.Println(`csos - Claude Sobriety Selector
+
+Usage:
+  csos                    Interactive level selection
+  csos -l <level>         Direct selection (0-6 or keyword)
+  csos -- <args>          Pass arguments to claude/codex
+
+Levels:`)
+	for _, l := range levels {
+		fmt.Printf("  %d (%s): %s - %s\n", l.Index, l.Keyword, l.Name, l.Description)
+	}
+}
+
+func execute(level *Level, passthrough []string) {
+	fmt.Printf("Would execute: %s %v (passthrough: %v)\n", level.Command, level.Args, passthrough)
 }
