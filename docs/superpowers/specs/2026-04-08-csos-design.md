@@ -111,8 +111,9 @@ type Level struct {
 3. Otherwise: show TUI, wait for selection
 4. Print launch message
 5. `exec.LookPath()` to resolve command to absolute path (enables PATH search + "not found" errors)
-6. Build command: env vars + absolute path + args + passthrough args
-7. `syscall.Exec()` to replace process (clean TTY passthrough)
+6. Build environment: start from `os.Environ()`, overlay `Level.Env` vars
+7. Build argv: absolute path + level args + passthrough args
+8. `syscall.Exec()` to replace process (clean TTY passthrough)
 
 ## Error Handling
 
