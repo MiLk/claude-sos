@@ -185,9 +185,13 @@ func printHelp() {
 	fmt.Println(`csos - Claude Sobriety Selector
 
 Usage:
-  csos                    Interactive level selection
-  csos -l <level>         Direct selection (0-6 or keyword)
-  csos -- <args>          Pass arguments to claude/codex
+  csos                        Interactive level selection
+  csos -l, --level <level>    Direct selection (0-6 or keyword)
+  csos -h, --help             Show this help
+  csos -- <args>              Pass args to selected backend (claude or codex)
+
+Note: Passthrough args are forwarded verbatim to the selected level's CLI.
+      Level 6 (police) uses codex, which has different flags than claude.
 
 Levels:`)
 	for _, l := range levels {

@@ -26,9 +26,11 @@ csos
 csos -l 3
 csos -l beers
 
-# Pass arguments to claude/codex
+# Pass arguments to the selected backend
 csos -l 3 -- -p "fix the bug"
 ```
+
+**Note:** Arguments after `--` are passed verbatim to the selected level's CLI. Level 6 uses `codex`, which has different flags than `claude` (levels 0-5).
 
 ## Levels
 
