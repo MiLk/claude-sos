@@ -29,7 +29,7 @@
 
 ```bash
 cd /Users/emilien/Dev/claude-sos
-go mod init github.com/emilienMusic/claude-sos
+go mod init github.com/MiLk/claude-sos
 ```
 
 - [ ] **Step 2: Add dependencies**
@@ -110,18 +110,14 @@ func findLevel(s string) (*Level, error) {
 		if idx >= 0 && idx < len(levels) {
 			return &levels[idx], nil
 		}
-		return nil, fmt.Errorf("unknown level: %d. Use 0-%d or keyword", idx, len(levels)-1)
+		return nil, fmt.Errorf("Unknown level: %d. Use 0-6 or keyword.", idx)
 	}
 	for i := range levels {
 		if levels[i].Keyword == s {
 			return &levels[i], nil
 		}
 	}
-	keywords := ""
-	for _, l := range levels {
-		keywords += l.Keyword + ", "
-	}
-	return nil, fmt.Errorf("unknown level: %s. Try: %s", s, keywords[:len(keywords)-2])
+	return nil, fmt.Errorf("Unknown level: %s. Try: forgot, nijikai, nihonshu, beers, beer, sober, police", s)
 }
 ```
 
@@ -489,6 +485,25 @@ import (
 Replace the execute function:
 
 ```go
+func overlayEnv(base []string, overlay []string) []string {
+	env := make(map[string]string)
+	for _, e := range base {
+		if idx := strings.Index(e, "="); idx != -1 {
+			env[e[:idx]] = e[idx+1:]
+		}
+	}
+	for _, e := range overlay {
+		if idx := strings.Index(e, "="); idx != -1 {
+			env[e[:idx]] = e[idx+1:]
+		}
+	}
+	result := make([]string, 0, len(env))
+	for k, v := range env {
+		result = append(result, k+"="+v)
+	}
+	return result
+}
+
 func execute(level *Level, passthrough []string) {
 	binary, err := exec.LookPath(level.Command)
 	if err != nil {
@@ -506,11 +521,8 @@ func execute(level *Level, passthrough []string) {
 	argv := append([]string{level.Command}, level.Args...)
 	argv = append(argv, passthrough...)
 
-	// Build env: inherit current env, overlay level-specific vars
-	env := os.Environ()
-	for _, e := range level.Env {
-		env = append(env, e)
-	}
+	// Build env: inherit current env, overlay level-specific vars (replacing duplicates)
+	env := overlayEnv(os.Environ(), level.Env)
 
 	// Replace this process
 	if err := syscall.Exec(binary, argv, env); err != nil {
@@ -555,12 +567,12 @@ Expected: builds without warnings
 gofmt -w main.go
 ```
 
-- [ ] **Step 3: Add build constraint for Unix**
+- [ ] **Step 3: Add build constraint for macOS/Linux**
 
-Add at top of main.go after package line:
+Add at the very top of main.go, before the package line:
 
 ```go
-//go:build unix
+//go:build darwin || linux
 
 package main
 ```
@@ -597,13 +609,13 @@ A humorous CLI for launching Claude Code at various "sobriety levels."
 ## Install
 
 ```bash
-go install github.com/emilienMusic/claude-sos@latest
+go install github.com/MiLk/claude-sos@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/emilienMusic/claude-sos
+git clone https://github.com/MiLk/claude-sos
 cd claude-sos
 go build -o csos
 ```
