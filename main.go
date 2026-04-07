@@ -191,6 +191,24 @@ Levels:`)
 	}
 }
 
+func launchMessage(level *Level) string {
+	switch level.Index {
+	case 0:
+		return "Forgetting everything you told me..."
+	case 1, 2:
+		return "Pouring some sake..."
+	case 3, 4:
+		return "Cracking open a cold one..."
+	case 5:
+		return "Putting on the serious face..."
+	case 6:
+		return "Calling for backup..."
+	default:
+		return "Launching..."
+	}
+}
+
 func execute(level *Level, passthrough []string) {
+	fmt.Println(launchMessage(level))
 	fmt.Printf("Would execute: %s %v (passthrough: %v)\n", level.Command, level.Args, passthrough)
 }
