@@ -1,4 +1,4 @@
-# csos - Claude Sobriety Selector
+# claude-sos - Claude Sobriety Selector
 
 A humorous CLI for launching Claude Code at various "sobriety levels."
 
@@ -13,21 +13,21 @@ Or build from source:
 ```bash
 git clone https://github.com/MiLk/claude-sos
 cd claude-sos
-go build -o csos
+go build -o claude-sos
 ```
 
 ## Usage
 
 ```bash
 # Interactive selection
-csos
+claude-sos
 
 # Direct selection by number or keyword
-csos -l 3
-csos -l beers
+claude-sos -l 3
+claude-sos -l beers
 
 # Pass arguments to the selected backend
-csos -l 3 -- -p "fix the bug"
+claude-sos -l 3 -- -p "fix the bug"
 ```
 
 **Note:** Arguments after `--` are passed verbatim to the selected level's CLI. Level 6 uses `codex`, which has different flags than `claude` (levels 0-5).
